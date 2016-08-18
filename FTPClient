@@ -1,0 +1,257 @@
+//FTP client
+package ftpclientservers;
+import java.net.*;
+import java.io.*;
+import java.util.*;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import javax.crypto.BadPaddingException;
+import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.KeyGenerator;
+import javax.crypto.NoSuchPaddingException;
+import javax.crypto.SecretKey;
+
+class FTPClient
+{
+    public static void main(String args[]) throws Exception
+    {
+        Socket soc=new Socket("127.0.0.1",5217);
+        transferfileClient t=new transferfileClient(soc);
+        t.displayMenu();
+
+    }
+}
+class transferfileClient
+{
+    Socket ClientSoc;
+
+    DataInputStream din;
+    DataOutputStream dout;
+    BufferedReader br;
+    transferfileClient(Socket soc)
+    {
+        try
+        {
+            ClientSoc=soc;
+            din=new DataInputStream(ClientSoc.getInputStream());
+            dout=new DataOutputStream(ClientSoc.getOutputStream());
+            br=new BufferedReader(new InputStreamReader(System.in));
+        }
+        catch(Exception ex)
+        {
+        }
+    }
+    void SendFile() throws Exception
+    {
+
+        String filename;
+        System.out.print("Enter File Name :");
+        filename=br.readLine();
+
+        File f1=new File(filename);
+        if(!f.exists())
+        {
+            System.out.println("File not Exists...");
+            dout.writeUTF("File not found");
+            return;
+        }
+        FileReader fr=new FileReader(f1);
+        int i=0;
+        char[] a=new char[f1.length()];
+        while((i=fr.read())!=-1) 
+   a[i]=char(i);
+ String f=a.toString();
+        byte[] a=DESEncryptionDecryption.encryptData(f);
+        String ch=new String(a);
+
+        dout.writeUTF(filename);
+
+        String msgFromServer=din.readUTF();
+        if(msgFromServer.compareTo("File Already Exists")==0)
+        {
+            String Option;
+            System.out.println("File Already Exists. Want to OverWrite (Y/N) ?");
+            Option=br.readLine();
+            if(Option=="Y")
+            {
+                dout.writeUTF("Y");
+            }
+            else
+            {
+                dout.writeUTF("N");
+                return;
+            }
+        }
+
+        System.out.println("Sending File ...");
+       
+       
+            
+            dout.writeUTF(ch);
+        
+            
+        
+       
+        fin.close();
+        System.out.println(din.readUTF());
+
+    }
+
+    void ReceiveFile() throws Exception
+    {
+        String fileName;
+        System.out.print("Enter File Name :");
+        fileName=br.readLine();
+        
+        dout.writeUTF(fileName);
+        String msgFromServer=din.readUTF();
+
+        if(msgFromServer.compareTo("File Not Found")==0)
+        {
+            System.out.println("File not found on Server ...");
+            return;
+        }
+        else if(msgFromServer.compareTo("READY")==0)
+        {
+            System.out.println("Receiving File ...");
+            File f=new File(fileName);
+            if(f.exists())
+            {
+                String Option;
+                System.out.println("File Already Exists. Want to OverWrite (Y/N) ?");
+                Option=br.readLine();
+                if(Option=="N")
+                {
+                    dout.flush();
+                    return;
+                }
+            }
+            FileOutputStream fout=new FileOutputStream(f);
+            int ch;
+            String temp;
+            do
+            {
+                temp=din.readUTF();
+                ch=Integer.parseInt(temp);
+                if(ch!=-1)
+                {
+                    fout.write(ch);
+                }
+            }while(ch!=-1);
+            
+            fout.close();
+            File f2=new File(fileName);
+        
+        FileReader fr=new FileReader(f2);
+        int i=0;
+        char[] a=new char[f2.length()];
+        while((i=fr.read())!=-1) 
+   a=char(i);
+ String f=a.toString();
+        byte[] a=DESEncryptionDecryption.decryptData(f);
+        String ch=new String(a);
+        System.out.println("Enter the filename in which you want to decrypt the received file: ");
+        String filename2=s.nextLine();
+        FileWriter fw=new FileWriter(filename2);
+        fw.write(a);
+        fw.close();
+            System.out.println(din.readUTF());
+
+        }
+
+
+    }
+
+    public void displayMenu() throws Exception
+    {
+        while(true)
+        {
+            System.out.println("[ MENU ]");
+            System.out.println("1. Send File");
+            System.out.println("2. Receive File");
+            System.out.println("3. Exit");
+            System.out.print("\nEnter Choice :");
+            int choice;
+            choice=Integer.parseInt(br.readLine());
+            if(choice==1)
+            {
+                dout.writeUTF("SEND");
+                
+                SendFile();
+            }
+            else if(choice==2)
+            {
+                dout.writeUTF("GET");
+                ReceiveFile();
+            }
+            else
+            {
+                dout.writeUTF("DISCONNECT");
+                System.exit(1);
+            }
+        }
+    }
+}
+static class DESEncryptionDecryption {
+
+ private static Cipher encryptCipher;
+ private static Cipher decryptCipher;
+
+ DESEncryptionDecryption{
+  try {
+   KeyGenerator keygenerator = KeyGenerator.getInstance("DES");
+   SecretKey secretKey = keygenerator.generateKey();
+
+   encryptCipher = Cipher.getInstance("DES/ECB/PKCS5Padding");
+   encryptCipher.init(Cipher.ENCRYPT_MODE, secretKey);
+   byte[] encryptedData = encryptData("Classified Information!");
+
+   decryptCipher = Cipher.getInstance("DES/ECB/PKCS5Padding");
+   decryptCipher.init(Cipher.DECRYPT_MODE, secretKey);
+   decryptData(encryptedData);
+
+  } catch (NoSuchAlgorithmException e) {
+   e.printStackTrace();
+  } catch (NoSuchPaddingException e) {
+   e.printStackTrace();
+  } catch (InvalidKeyException e) {
+   e.printStackTrace();
+  } catch (IllegalBlockSizeException e) {
+   e.printStackTrace();
+  } catch (BadPaddingException e) {
+   e.printStackTrace();
+  }
+
+ }
+
+ /**
+  * Encrypt Data
+  * @param data
+  * @return
+  * @throws IllegalBlockSizeException
+  * @throws BadPaddingException
+  */
+ private static byte[] encryptData(String data)
+   throws IllegalBlockSizeException, BadPaddingException {
+  System.out.println("Data Before Encryption :" + data);
+  byte[] dataToEncrypt = data.getBytes();
+  byte[] encryptedData = encryptCipher.doFinal(dataToEncrypt);
+  System.out.println("Encryted Data: " + encryptedData);
+
+  return encryptedData;
+ }
+
+ /**
+  * Decrypt Data
+  * @param data
+  * @throws IllegalBlockSizeException
+  * @throws BadPaddingException
+  */
+ private static byte[] decryptData(byte[] data)
+   throws IllegalBlockSizeException, BadPaddingException {
+  byte[] textDecrypted = decryptCipher.doFinal(data);
+  System.out.println("Decryted Data: " + new String(textDecrypted));
+  return textDecrypted;
+ }
+}
