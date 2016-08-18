@@ -1,4 +1,3 @@
-//FTP client
 package ftpclientservers;
 import java.net.*;
 import java.io.*;
@@ -16,7 +15,7 @@ class FTPClient
 {
     public static void main(String args[]) throws Exception
     {
-        Socket soc=new Socket("127.0.0.1",5217);
+        Socket soc=new Socket("127.0.0.1",5317);
         transferfileClient t=new transferfileClient(soc);
         t.displayMenu();
 
@@ -50,20 +49,21 @@ class transferfileClient
         filename=br.readLine();
 
         File f1=new File(filename);
-        if(!f.exists())
+        if(!f1.exists())
         {
             System.out.println("File not Exists...");
             dout.writeUTF("File not found");
             return;
         }
         FileReader fr=new FileReader(f1);
-        int i=0;
-        char[] a=new char[f1.length()];
+        int i,n;
+        n=(int)f1.length();
+        char[] a=new char[n];
         while((i=fr.read())!=-1) 
-   a[i]=char(i);
+   a[i]=(char)i;
  String f=a.toString();
-        byte[] a=DESEncryptionDecryption.encryptData(f);
-        String ch=new String(a);
+        byte[] b=DESEncryptionDecryption.encryptData(f);
+        String ch=new String(b);
 
         dout.writeUTF(filename);
 
@@ -93,13 +93,14 @@ class transferfileClient
             
         
        
-        fin.close();
+        //fin.close();
         System.out.println(din.readUTF());
 
     }
 
     void ReceiveFile() throws Exception
     {
+        Scanner s=new Scanner(System.in);
         String fileName;
         System.out.print("Enter File Name :");
         fileName=br.readLine();
@@ -145,16 +146,16 @@ class transferfileClient
         
         FileReader fr=new FileReader(f2);
         int i=0;
-        char[] a=new char[f2.length()];
+        byte[] a=new byte[(int)f2.length()];
         while((i=fr.read())!=-1) 
-   a=char(i);
- String f=a.toString();
-        byte[] a=DESEncryptionDecryption.decryptData(f);
-        String ch=new String(a);
+   a[i]=(byte)i;
+ 
+        byte[] c=DESEncryptionDecryption.decryptData(a);
+        String ch1=new String(c);
         System.out.println("Enter the filename in which you want to decrypt the received file: ");
         String filename2=s.nextLine();
         FileWriter fw=new FileWriter(filename2);
-        fw.write(a);
+        fw.write(ch1);
         fw.close();
             System.out.println(din.readUTF());
 
@@ -193,12 +194,12 @@ class transferfileClient
         }
     }
 }
-static class DESEncryptionDecryption {
+class DESEncryptionDecryption {
 
  private static Cipher encryptCipher;
  private static Cipher decryptCipher;
 
- DESEncryptionDecryption{
+{
   try {
    KeyGenerator keygenerator = KeyGenerator.getInstance("DES");
    SecretKey secretKey = keygenerator.generateKey();
@@ -232,7 +233,7 @@ static class DESEncryptionDecryption {
   * @throws IllegalBlockSizeException
   * @throws BadPaddingException
   */
- private static byte[] encryptData(String data)
+ public static byte[] encryptData(String data)
    throws IllegalBlockSizeException, BadPaddingException {
   System.out.println("Data Before Encryption :" + data);
   byte[] dataToEncrypt = data.getBytes();
@@ -248,7 +249,7 @@ static class DESEncryptionDecryption {
   * @throws IllegalBlockSizeException
   * @throws BadPaddingException
   */
- private static byte[] decryptData(byte[] data)
+ public static byte[] decryptData(byte[] data)
    throws IllegalBlockSizeException, BadPaddingException {
   byte[] textDecrypted = decryptCipher.doFinal(data);
   System.out.println("Decryted Data: " + new String(textDecrypted));
